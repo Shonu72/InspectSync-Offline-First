@@ -118,4 +118,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String systemHealthy(int minutes) {
     return 'System healthy. Next automated sync cycle in $minutes minutes.';
   }
+
+  @override
+  String get searchHint => 'Search tasks or locations...';
+
+  @override
+  String get serviceOrder => 'SERVICE ORDER';
+
+  @override
+  String get estimatedDist => 'ESTIMATED DIST.';
+
+  @override
+  String get timeWindowLabel => 'TIME WINDOW';
+
+  @override
+  String get priorityLabel => 'PRIORITY';
+
+  @override
+  String get route => 'Route';
+
+  @override
+  String get startFieldTask => 'Start Field Task';
 }

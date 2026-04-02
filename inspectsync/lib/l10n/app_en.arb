@@ -93,5 +93,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "searchHint": "Search tasks or locations...",
+  "serviceOrder": "SERVICE ORDER",
+  "estimatedDist": "ESTIMATED DIST.",
+  "timeWindowLabel": "TIME WINDOW",
+  "priorityLabel": "PRIORITY",
+  "route": "Route",
+  "startFieldTask": "Start Field Task"
 }

@@ -303,6 +303,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System healthy. Next automated sync cycle in {minutes} minutes.'**
   String systemHealthy(int minutes);
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks or locations...'**
+  String get searchHint;
+
+  /// No description provided for @serviceOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'SERVICE ORDER'**
+  String get serviceOrder;
+
+  /// No description provided for @estimatedDist.
+  ///
+  /// In en, this message translates to:
+  /// **'ESTIMATED DIST.'**
+  String get estimatedDist;
+
+  /// No description provided for @timeWindowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'TIME WINDOW'**
+  String get timeWindowLabel;
+
+  /// No description provided for @priorityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'PRIORITY'**
+  String get priorityLabel;
+
+  /// No description provided for @route.
+  ///
+  /// In en, this message translates to:
+  /// **'Route'**
+  String get route;
+
+  /// No description provided for @startFieldTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Field Task'**
+  String get startFieldTask;
 }
 
 class _AppLocalizationsDelegate

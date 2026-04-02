@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inspectsync/l10n/app_localizations.dart';
+import 'package:inspectsync/features/map/presentation/screens/map_screen.dart';
 import 'dashboard_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -14,7 +15,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const DashboardScreen(),
-    const Center(child: Text('Map View')),
+    const MapScreen(),
     const Center(child: Text('Tasks View')),
     const Center(child: Text('Settings View')),
   ];
