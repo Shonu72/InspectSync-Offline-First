@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inspectsync/l10n/app_localizations.dart';
 import 'package:inspectsync/features/map/presentation/screens/map_screen.dart';
 import 'package:inspectsync/features/tasks/presentation/screens/tasks_screen.dart';
 import 'dashboard_screen.dart';
+import 'package:inspectsync/features/sync/presentation/providers/sync_controller.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final SyncController syncController;
+  const MainScreen({super.key, required this.syncController});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -14,12 +17,17 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const MapScreen(),
-    const TasksScreen(),
-    const Center(child: Text('Sync & Profile View')),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      DashboardScreen(syncController: widget.syncController),
+      const MapScreen(),
+      const TasksScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,12 +49,12 @@ class _MainScreenState extends State<MainScreen> {
             _buildNavItem(1, Icons.map_rounded, l10n.bottomNavMap),
             const SizedBox(width: 48), // Space for FAB
             _buildNavItem(2, Icons.assignment_rounded, l10n.bottomNavTasks),
-            _buildNavItem(3, Icons.sync_rounded, "SYNC"),
+            _buildNavItem(3, Icons.sync_rounded, "SYNC", isRedirect: true), 
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => context.push('/create-task'),
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         child: const Icon(Icons.add),
@@ -55,12 +63,18 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label, {bool isRedirect = false}) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isSelected = _selectedIndex == index;
+    final isSelected = _selectedIndex == index && !isRedirect;
 
     return InkWell(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () {
+        if (isRedirect) {
+          context.push('/sync');
+        } else {
+          setState(() => _selectedIndex = index);
+        }
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

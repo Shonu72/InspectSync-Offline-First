@@ -57,6 +57,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bottomNavTasks => 'TASKS';
 
   @override
+  String get bottomNavSync => 'SYNC';
+
+  @override
   String get bottomNavSettings => 'SETTINGS';
 
   @override

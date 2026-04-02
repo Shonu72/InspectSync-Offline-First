@@ -190,6 +190,12 @@ abstract class AppLocalizations {
   /// **'TASKS'**
   String get bottomNavTasks;
 
+  /// No description provided for @bottomNavSync.
+  ///
+  /// In en, this message translates to:
+  /// **'SYNC'**
+  String get bottomNavSync;
+
   /// No description provided for @bottomNavSettings.
   ///
   /// In en, this message translates to:

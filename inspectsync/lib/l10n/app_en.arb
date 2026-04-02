@@ -54,6 +54,7 @@
   "bottomNavDashboard": "DASHBOARD",
   "bottomNavMap": "MAP",
   "bottomNavTasks": "TASKS",
+  "bottomNavSync": "SYNC",
   "bottomNavSettings": "SETTINGS",
   "precisionField": "Precision Field",
   "allLocalDataSynchronized": "All local data synchronized",

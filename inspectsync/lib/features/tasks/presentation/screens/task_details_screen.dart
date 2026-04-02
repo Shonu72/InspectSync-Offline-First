@@ -20,62 +20,65 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.close_rounded),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.sync_rounded, size: 12, color: Colors.green),
-                  const SizedBox(width: 6),
+                  Icon(Icons.lock_outline, size: 10, color: Colors.green),
+                  SizedBox(width: 4),
                   Text(
-                    l10n.allChangesCached,
-                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    'ENCRYPTED SESSION',
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.green, letterSpacing: 1.0),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 2),
-            Text(l10n.taskDetails, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(l10n.taskDetails.toUpperCase(), 
+              style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            ),
           ],
         ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.sync_rounded), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.more_vert_rounded), onPressed: () {}),
         ],
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
       ),
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 120), // Height for the sticky footer
+            padding: const EdgeInsets.only(bottom: 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Header Section
-                _buildHeader(context, l10n),
+                // 1. Mission Header
+                _buildMissionHeader(context, l10n),
                 
                 // 2. Technical Checklist
                 _buildSection(
                   context,
-                  title: l10n.technicalChecklist,
-                  icon: Icons.assignment_rounded,
+                  title: 'OPERATIONAL CHECKLIST',
+                  icon: Icons.checklist_rtl_rounded,
                   child: Column(
                     children: List.generate(_checklistItems.length, (index) {
                       return _buildChecklistItem(context, index);
@@ -83,177 +86,167 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   ),
                 ),
                 
-                // 3. Field Documentation
+                // 3. Field Evidence (Photos)
                 _buildSection(
                   context,
-                  title: l10n.fieldDocumentation,
-                  icon: Icons.camera_alt_rounded,
+                  title: 'FIELD EVIDENCE',
+                  icon: Icons.camera_enhance_rounded,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
                           Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Stack(
-                                children: [
-                                  Image.asset(
-                                    'assets/graphics/fiber_inspection.png',
-                                    height: 160,
-                                    width: double.infinity,
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  image: const DecorationImage(
+                                    image: NetworkImage('https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=400&fit=crop'),
                                     fit: BoxFit.cover,
                                   ),
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        shape: BoxShape.circle,
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Colors.black.withValues(alpha: 0.5),
+                                        child: const Icon(Icons.delete_outline, color: Colors.white, size: 14),
                                       ),
-                                      child: const Icon(Icons.close, color: Colors.white, size: 14),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Container(
-                              height: 160,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.withValues(alpha: 0.3), width: 1),
-                                borderRadius: BorderRadius.circular(12),
-                                color: Colors.grey.shade50,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_a_photo_rounded, color: Colors.grey.shade600, size: 32),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    l10n.addPhoto,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surfaceContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_a_photo_rounded, color: colorScheme.primary, size: 32),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'CAPTURE DATA',
+                                      style: TextStyle(
+                                        color: colorScheme.primary,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.0,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        l10n.attachEvidence,
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 11, height: 1.4),
-                      ),
                     ],
                   ),
                 ),
                 
-                // 4. Field Notes
+                // 4. Tactical Notes
                 _buildSection(
                   context,
-                  title: l10n.fieldNotes,
+                  title: 'TACTICAL NOTES',
                   icon: Icons.notes_rounded,
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TextField(
-                          maxLines: null,
-                          decoration: InputDecoration(
-                            hintText: l10n.notesHint,
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                          ),
-                        ),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      maxLines: 4,
+                      style: textTheme.bodyMedium,
+                      decoration: InputDecoration(
+                        hintText: 'Record site observations...',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
                       ),
-                      const SizedBox(height: 16),
-                      TextButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.mic_rounded, size: 18),
-                        label: Text(l10n.dictate),
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.grey.shade200,
-                          foregroundColor: Colors.black87,
-                          minimumSize: const Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           
-          // 5. Sticky Footer
+          // Sticky Tactical Footer
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: _buildStickyFooter(context, l10n),
+            child: _buildTacticalFooter(context, l10n),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
+  Widget _buildMissionHeader(BuildContext context, AppLocalizations l10n) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLowest.withValues(alpha: 0.5),
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.2))),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 3,
-                height: 20,
-                color: colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
               Text(
-                l10n.projectIdLabel("#9921-X"),
-                style: const TextStyle(
-                  fontSize: 12,
+                'PROJECT ID:',
+                style: TextStyle(
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                  letterSpacing: 0.5,
+                  color: colorScheme.primary,
+                  letterSpacing: 1.5,
                 ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '#OPS-2024-99X',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            "Substation Fiber\nInspection",
+            "Fiber Backbone\nAudit & Routing",
             style: textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+              fontWeight: FontWeight.w900,
               height: 1.1,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.siteLocation("North Grid Cluster, Terminal 4B"),
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 14, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text(
+                "SECTOR 7G - NORTHERN POWER GRID",
+                style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ],
       ),
@@ -261,34 +254,23 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Widget _buildSection(BuildContext context, {required String title, required IconData icon, required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
-              const SizedBox(width: 12),
+              Icon(icon, color: colorScheme.primary, size: 16),
+              const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.2),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           child,
         ],
       ),
@@ -297,46 +279,57 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   Widget _buildChecklistItem(BuildContext context, int index) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              _checklistItems[index],
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+    final isDone = _checklistValues[index];
+    
+    return GestureDetector(
+      onTap: () => setState(() => _checklistValues[index] = !_checklistValues[index]),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDone ? colorScheme.primary.withValues(alpha: 0.05) : colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDone ? colorScheme.primary.withValues(alpha: 0.3) : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _checklistItems[index],
+                style: TextStyle(
+                  fontSize: 14, 
+                  fontWeight: isDone ? FontWeight.bold : FontWeight.w500,
+                  color: isDone ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
-          ),
-          Checkbox(
-            value: _checklistValues[index],
-            onChanged: (val) {
-              setState(() {
-                _checklistValues[index] = val!;
-              });
-            },
-            activeColor: colorScheme.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          ),
-        ],
+            Icon(
+              isDone ? Icons.check_circle_rounded : Icons.radio_button_off_rounded,
+              color: isDone ? colorScheme.primary : colorScheme.outline,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildStickyFooter(BuildContext context, AppLocalizations l10n) {
+  Widget _buildTacticalFooter(BuildContext context, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
+    final completedCount = _checklistValues.where((v) => v).length;
+    final percent = (completedCount / _checklistItems.length * 100).toInt();
+
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.2))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
             offset: const Offset(0, -5),
           ),
         ],
@@ -344,74 +337,57 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.timeOnSite,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
-                      ),
-                      const Text(
-                        "02:45:12",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 32,
-                  color: Colors.grey.withValues(alpha: 0.3),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.progress,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
-                      ),
-                      const Text(
-                        "75%",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 24),
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricTile('ELAPSED', '02:14:05', Icons.timer_outlined, colorScheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMetricTile('PROGRESS', '$percent%', Icons.analytics_outlined, Colors.orange),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.save_rounded, size: 20),
-            label: Text(l10n.saveSyncTask),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 56),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 4,
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: const Text('SUBMIT REPORT TO COMMAND', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricTile(String label, String value, IconData icon, Color accent) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 10, color: accent),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: accent, letterSpacing: 1.0)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
         ],
       ),
     );

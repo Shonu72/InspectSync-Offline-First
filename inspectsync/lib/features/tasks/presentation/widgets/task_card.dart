@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inspectsync/l10n/app_localizations.dart';
 
 enum TaskStatus { synced, failed, pending, inProgress }
+enum TaskPriority { low, medium, high }
 
 class TaskCard extends StatelessWidget {
   final String title;
@@ -9,7 +10,9 @@ class TaskCard extends StatelessWidget {
   final String? time;
   final String? location;
   final TaskStatus status;
+  final TaskPriority priority;
   final VoidCallback? onActionPressed;
+  final VoidCallback? onTap;
   final String? imageUrl;
 
   const TaskCard({
@@ -19,7 +22,9 @@ class TaskCard extends StatelessWidget {
     this.time,
     this.location,
     required this.status,
+    this.priority = TaskPriority.medium,
     this.onActionPressed,
+    this.onTap,
     this.imageUrl,
   });
 
@@ -49,13 +54,15 @@ class TaskCard extends StatelessWidget {
         break;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-        // Subtle shadow or tonal shift
-      ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(12),
+        ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: IntrinsicHeight(
@@ -76,10 +83,16 @@ class TaskCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            _getStatusIcon(status),
-                            size: 20,
-                            color: statusColor,
+                          Row(
+                            children: [
+                              Icon(
+                                _getStatusIcon(status),
+                                size: 16,
+                                color: statusColor,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildPriorityBadge(context),
+                            ],
                           ),
                           _buildStatusBadge(context, statusLabel, statusColor),
                         ],
@@ -184,8 +197,9 @@ class TaskCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   IconData _getStatusIcon(TaskStatus status) {
     switch (status) {
@@ -198,6 +212,41 @@ class TaskCard extends StatelessWidget {
       case TaskStatus.inProgress:
         return Icons.navigation;
     }
+  }
+
+  Widget _buildPriorityBadge(BuildContext context) {
+    Color priorityColor;
+    String label;
+    switch (priority) {
+      case TaskPriority.high:
+        priorityColor = const Color(0xFFD32F2F);
+        label = 'P1';
+        break;
+      case TaskPriority.medium:
+        priorityColor = const Color(0xFFF57C00);
+        label = 'P2';
+        break;
+      case TaskPriority.low:
+        priorityColor = const Color(0xFF388E3C);
+        label = 'P3';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: priorityColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 
   Widget _buildStatusBadge(BuildContext context, String label, Color color) {
