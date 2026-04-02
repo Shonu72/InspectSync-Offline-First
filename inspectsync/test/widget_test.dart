@@ -1,30 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:inspectsync/main.dart';
+import 'package:inspectsync/core/db/app_database.dart';
+import 'package:inspectsync/features/sync/sync_queue_manager.dart';
+import 'package:inspectsync/features/sync/conflict_resolver.dart';
+import 'package:inspectsync/features/sync/sync_service.dart';
+import 'package:inspectsync/features/tasks/data/task_local_datasource.dart';
+import 'package:inspectsync/features/tasks/data/task_remote_datasource.dart';
+import 'package:inspectsync/features/tasks/data/task_repository.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Offline architecture stub test', (WidgetTester tester) async {
+    // Basic service mocking for the test
+    final db = AppDatabase();
+    final localTaskDs = TaskLocalDataSource(db);
+    final remoteTaskDs = TaskRemoteDataSource();
+    
+    final queueManager = SyncQueueManager(db);
+    final conflictResolver = ConflictResolver(db);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final syncService = SyncService(
+      queueManager: queueManager,
+      remote: remoteTaskDs,
+      local: localTaskDs,
+      conflictResolver: conflictResolver,
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    final taskRepository = TaskRepository(
+      local: localTaskDs,
+      remote: remoteTaskDs,
+      syncService: syncService,
+    );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.pumpWidget(MyApp(taskRepository: taskRepository));
+
+    expect(find.text('Tasks Sync Demo'), findsOneWidget);
   });
 }
