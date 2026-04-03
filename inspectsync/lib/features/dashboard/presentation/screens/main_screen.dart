@@ -24,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _screens = [
       DashboardScreen(syncController: widget.syncController),
-      const MapScreen(),
+      MapScreen(onToggleList: () => setState(() => _selectedIndex = 0)),
       const TasksScreen(),
     ];
 

@@ -14,6 +14,7 @@ class TaskDetailsScreen extends StatefulWidget {
 }
 
 class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
+  late final DateTime _sessionStartedAt;
   late final Stream<DateTime> _timerStream;
   late final ValueNotifier<List<bool>> _checklistNotifier;
   
@@ -27,6 +28,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    _sessionStartedAt = DateTime.now();
     _timerStream = Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now()).asBroadcastStream();
     _checklistNotifier = ValueNotifier<List<bool>>([false, true, false, false]);
   }
@@ -202,6 +204,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         ),
                       ),
                     ),
+                    SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -369,13 +372,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   stream: _timerStream,
                   builder: (context, snapshot) {
                     final now = snapshot.data ?? DateTime.now();
-                    final duration = now.difference(task.createdAt);
+                    final duration = now.difference(_sessionStartedAt);
                     final hours = duration.inHours.toString().padLeft(2, '0');
                     final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
                     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
                     final elapsedStr = "$hours:$minutes:$seconds";
                     
-                    return _buildMetricTile('ELAPSED', elapsedStr, Icons.timer_outlined, colorScheme.primary);
+                    return _buildMetricTile('TIME ON SITE', elapsedStr, Icons.timer_outlined, colorScheme.primary);
                   },
                 ),
               ),

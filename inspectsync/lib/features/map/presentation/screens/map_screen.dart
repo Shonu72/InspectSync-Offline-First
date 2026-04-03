@@ -1,27 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:intl/intl.dart';
-import 'package:get_it/get_it.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:inspectsync/l10n/app_localizations.dart';
-import 'package:inspectsync/features/tasks/data/task_repository.dart';
+import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inspectsync/core/db/app_database.dart';
+import 'package:inspectsync/features/tasks/data/task_repository.dart';
 import 'package:inspectsync/features/tasks/presentation/screens/task_details_screen.dart';
+import 'package:inspectsync/l10n/app_localizations.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final VoidCallback? onToggleList;
+  const MapScreen({super.key, this.onToggleList});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen>
+    with SingleTickerProviderStateMixin {
   final MapController _mapController = MapController();
   late final ValueNotifier<Task?> _selectedTask;
   late final ValueNotifier<Position?> _currentPosition;
   late final ValueNotifier<String> _distanceText;
+  bool _hasInitialBoundsFitted = false;
+
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -29,6 +37,16 @@ class _MapScreenState extends State<MapScreen> {
     _selectedTask = ValueNotifier<Task?>(null);
     _currentPosition = ValueNotifier<Position?>(null);
     _distanceText = ValueNotifier<String>("---");
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     _determinePosition();
   }
 
@@ -37,6 +55,7 @@ class _MapScreenState extends State<MapScreen> {
     _selectedTask.dispose();
     _currentPosition.dispose();
     _distanceText.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -57,7 +76,7 @@ class _MapScreenState extends State<MapScreen> {
 
     final position = await Geolocator.getCurrentPosition();
     _currentPosition.value = position;
-    
+
     // Listen for updates
     Geolocator.getPositionStream().listen((Position position) {
       if (mounted) {
@@ -79,7 +98,7 @@ class _MapScreenState extends State<MapScreen> {
         task.lat!,
         task.lng!,
       );
-      
+
       final miles = distanceInMeters / 1609.34;
       _distanceText.value = "${miles.toStringAsFixed(1)} mi";
     } else {
@@ -105,14 +124,45 @@ class _MapScreenState extends State<MapScreen> {
       body: StreamBuilder<List<Task>>(
         stream: taskRepository.watchTasks(),
         builder: (context, snapshot) {
-          final tasks = snapshot.data?.where((t) => t.lat != null && t.lng != null).toList() ?? [];
+          final tasks =
+              snapshot.data
+                  ?.where((t) => t.lat != null && t.lng != null)
+                  .toList() ??
+              [];
+
+          // Tactical Auto-Fit: Ensure all tasks are visible on first load
+          if (tasks.isNotEmpty && !_hasInitialBoundsFitted) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                final points = tasks.map((t) => LatLng(t.lat!, t.lng!)).toList();
+                final bounds = LatLngBounds.fromPoints(points);
+                _mapController.fitCamera(
+                  CameraFit.bounds(
+                    bounds: bounds,
+                    padding: const EdgeInsets.all(70),
+                  ),
+                );
+                setState(() => _hasInitialBoundsFitted = true);
+              }
+            });
+          }
+
           final markers = tasks.map((task) {
             final point = LatLng(task.lat!, task.lng!);
-            
+
+            // Tactical Priority Mapping
+            final pInt = task.priority;
+            final markerColor = pInt == 0
+                ? const Color(0xFFD32F2F) // P1: Red
+                : (pInt == 1
+                      ? const Color(0xFFFBC02D)
+                      : const Color(0xFF757575)); // P2: Yellow, P3: Gray
+
             return Marker(
               point: point,
-              width: 120,
-              height: 48,
+              width: 80,
+              height: 80,
+              alignment: Alignment.topCenter,
               child: ValueListenableBuilder<Task?>(
                 valueListenable: _selectedTask,
                 builder: (context, selected, _) {
@@ -123,9 +173,14 @@ class _MapScreenState extends State<MapScreen> {
                       _updateDistance();
                       _mapController.move(point, 15);
                     },
-                    child: _buildTaskMarker(context, "#TSK-${task.id.substring(0, 4).toUpperCase()}", isSelected),
+                    child: _buildPointerMarker(
+                      context,
+                      "#TSK-${task.id.substring(0, 4).toUpperCase()}",
+                      isSelected,
+                      markerColor,
+                    ),
                   );
-                }
+                },
               ),
             );
           }).toList();
@@ -136,23 +191,40 @@ class _MapScreenState extends State<MapScreen> {
               FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
-                  initialCenter: tasks.isNotEmpty 
-                      ? LatLng(tasks.first.lat!, tasks.first.lng!) 
-                      : const LatLng(51.5, -0.09),
+                  initialCenter: tasks.isNotEmpty
+                      ? LatLng(tasks.first.lat!, tasks.first.lng!)
+                      : const LatLng(34.0522, -118.2437),
                   initialZoom: 14,
                   onTap: (tapPosition, point) => _selectedTask.value = null,
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.inspectsync.app',
                     tileBuilder: (context, tileWidget, tile) {
                       return ColorFiltered(
                         colorFilter: const ColorFilter.matrix([
-                          -0.2, -0.2, -0.2, 0, 255,
-                          -0.2, -0.2, -0.2, 0, 255,
-                          -0.1, -0.1, 0.2, 0, 255,
-                          0, 0, 0, 1, 0,
+                          -0.2,
+                          -0.2,
+                          -0.2,
+                          0,
+                          255,
+                          -0.2,
+                          -0.2,
+                          -0.2,
+                          0,
+                          255,
+                          -0.1,
+                          -0.1,
+                          0.2,
+                          0,
+                          255,
+                          0,
+                          0,
+                          0,
+                          1,
+                          0,
                         ]),
                         child: ColorFiltered(
                           colorFilter: ColorFilter.mode(
@@ -164,7 +236,19 @@ class _MapScreenState extends State<MapScreen> {
                       );
                     },
                   ),
-                  MarkerLayer(markers: markers),
+                  MarkerClusterLayerWidget(
+                    options: MarkerClusterLayerOptions(
+                      maxClusterRadius: 45,
+                      size: const Size(40, 40),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(50),
+                      maxZoom: 15,
+                      markers: markers,
+                      builder: (context, markers) {
+                        return _buildClusterWidget(context, markers.length);
+                      },
+                    ),
+                  ),
                   // User Location Marker Layer
                   ValueListenableBuilder<Position?>(
                     valueListenable: _currentPosition,
@@ -174,9 +258,9 @@ class _MapScreenState extends State<MapScreen> {
                         markers: [
                           Marker(
                             point: LatLng(pos.latitude, pos.longitude),
-                            width: 60,
-                            height: 60,
-                            child: _buildUserLocationMarker(context),
+                            width: 80,
+                            height: 80,
+                            child: _buildPulsingUserMarker(context),
                           ),
                         ],
                       );
@@ -185,7 +269,7 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
 
-              // 2. Top Search Bar Overlay
+              // 2. Tactical Controls & Overlays
               Positioned(
                 top: MediaQuery.of(context).padding.top + 16,
                 left: 16,
@@ -193,41 +277,71 @@ class _MapScreenState extends State<MapScreen> {
                 child: _buildSearchBar(context, l10n),
               ),
 
-              // 3. Task Detail Card Overlay & My Location FAB
+              // 3. Dynamic Task Summary Overlay
               ValueListenableBuilder<Task?>(
                 valueListenable: _selectedTask,
                 builder: (context, selected, _) {
-                  return Stack(
-                    children: [
-                      if (selected != null)
-                        Positioned(
-                          bottom: 32,
-                          left: 16,
-                          right: 16,
-                          child: _buildTaskDetailCard(context, l10n, selected),
-                        ),
-                      
-                      // 4. My Location FAB
-                      Positioned(
-                        right: 16,
-                        bottom: selected != null ? 300 : 32,
-                        child: FloatingActionButton(
-                          heroTag: 'map_location_fab',
-                          mini: true,
-                          backgroundColor: colorScheme.surface,
-                          foregroundColor: colorScheme.primary,
-                          child: const Icon(Icons.my_location_rounded),
-                          onPressed: () {
-                            final pos = _currentPosition.value;
-                            if (pos != null) {
-                              _mapController.move(LatLng(pos.latitude, pos.longitude), 15);
-                            }
-                          },
-                        ),
-                      ),
-                    ],
+                  final isShowing = selected != null;
+                  return AnimatedPositioned(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutQuart,
+                    bottom: isShowing ? 32 : -600,
+                    left: 16,
+                    right: 16,
+                    child: isShowing
+                        ? _buildTaskDetailCard(context, l10n, selected)
+                        : Container(), // Use Container to avoid issues with AnimatedPositioned children
                   );
                 },
+              ),
+
+              // 4. Tactical Side Controls
+              Positioned(
+                right: 16,
+                bottom: 350, // Floating above the card
+                child: Column(
+                  children: [
+                    _buildTacticalFab(
+                      context,
+                      icon: Icons.list_alt_rounded,
+                      onPressed: widget.onToggleList ?? () => context.go('/dashboard'),
+                      heroTag: 'map_list_fab',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTacticalFab(
+                      context,
+                      icon: Icons.add_rounded,
+                      onPressed: () {
+                        _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1);
+                      },
+                      heroTag: 'map_zoom_in',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTacticalFab(
+                      context,
+                      icon: Icons.remove_rounded,
+                      onPressed: () {
+                        _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1);
+                      },
+                      heroTag: 'map_zoom_out',
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTacticalFab(
+                      context,
+                      icon: Icons.my_location_rounded,
+                      onPressed: () {
+                        final pos = _currentPosition.value;
+                        if (pos != null) {
+                          _mapController.move(
+                            LatLng(pos.latitude, pos.longitude),
+                            15,
+                          );
+                        }
+                      },
+                      heroTag: 'map_recenter_fab',
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -236,36 +350,114 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildTaskMarker(BuildContext context, String id, bool isSelected) {
+  Widget _buildPointerMarker(
+    BuildContext context,
+    String id,
+    bool isSelected,
+    Color markerColor,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ID Tag
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: markerColor.withValues(alpha: 0.5), width: 1),
+          ),
+          child: Text(
+            id,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+        // Pointer Pin
+        Icon(
+          Icons.location_on_rounded,
+          size: isSelected ? 42 : 32,
+          color: markerColor,
+          shadows: [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              offset: const Offset(0, 4),
+              blurRadius: 8,
+            ),
+            if (isSelected)
+              Shadow(
+                color: markerColor.withValues(alpha: 0.8),
+                blurRadius: 20,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildClusterWidget(BuildContext context, int count) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.orange : colorScheme.primary,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white, width: isSelected ? 2 : 0),
+        color: colorScheme.primary,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
           BoxShadow(
-            color: (isSelected ? Colors.orange : colorScheme.primary).withValues(alpha: 0.3),
-            blurRadius: 8,
+            color: colorScheme.primary.withValues(alpha: 0.5),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          count.toString(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTacticalFab(
+    BuildContext context, {
+    required IconData icon,
+    required VoidCallback onPressed,
+    required String heroTag,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.circle, size: 8, color: isSelected ? Colors.white : Colors.white70),
-          const SizedBox(width: 6),
-          Text(
-            id,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-            ),
+      child: FloatingActionButton(
+        heroTag: heroTag,
+        mini: true,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.primary,
+        onPressed: onPressed,
+        elevation: 0,
+        shape: CircleBorder(
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),
-        ],
+        ),
+        child: Icon(icon, size: 20),
       ),
     );
   }
@@ -314,18 +506,28 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildTaskDetailCard(BuildContext context, AppLocalizations l10n, Task task) {
+  Widget _buildTaskDetailCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    Task task,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     // Tactical Mapping: Priority
     final pInt = task.priority;
-    final priorityLabel = pInt == 0 ? "P1 - HIGH" : (pInt == 2 ? "P3 - LOW" : "P2 - MED");
-    final priorityColor = pInt == 0 ? const Color(0xFFD32F2F) : (pInt == 2 ? const Color(0xFF388E3C) : const Color(0xFFF57C00));
+    final priorityLabel = pInt == 0
+        ? "P1 - HIGH"
+        : (pInt == 2 ? "P3 - LOW" : "P2 - MED");
+    final priorityColor = pInt == 0
+        ? const Color(0xFFD32F2F)
+        : (pInt == 2 ? const Color(0xFF388E3C) : const Color(0xFFFBC02D));
 
     // Tactical Mapping: Time Window (Estimated 4h window from creation)
     final startTime = DateFormat.Hm().format(task.createdAt);
-    final endTime = DateFormat.Hm().format(task.createdAt.add(const Duration(hours: 4)));
+    final endTime = DateFormat.Hm().format(
+      task.createdAt.add(const Duration(hours: 4)),
+    );
     final timeWindow = "$startTime - $endTime";
 
     return Container(
@@ -333,7 +535,9 @@ class _MapScreenState extends State<MapScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -363,17 +567,23 @@ class _MapScreenState extends State<MapScreen> {
                 decoration: BoxDecoration(
                   color: priorityColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: priorityColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: priorityColor.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Text(
                   priorityLabel,
-                  style: TextStyle(color: priorityColor, fontSize: 10, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    color: priorityColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Title and Structural Context
           Text(
             task.title.toUpperCase(),
@@ -386,29 +596,37 @@ class _MapScreenState extends State<MapScreen> {
           const SizedBox(height: 4),
           Row(
             children: [
-              Icon(Icons.business_rounded, size: 14, color: colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.business_rounded,
+                size: 14,
+                color: colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
-              Text(
-                task.description?.toUpperCase() ?? "MAIN BUILDING - SECTOR B",
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+              Expanded(
+                child: Text(
+                  task.description?.toUpperCase() ?? "MAIN BUILDING - SECTOR B",
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Info Grid: Distance and Time Window
           Row(
             children: [
               Expanded(
                 child: _buildInfoBox(
-                  context, 
-                  Icons.near_me_rounded, 
-                  "DISTANCE", 
+                  context,
+                  Icons.near_me_rounded,
+                  "DISTANCE",
                   _distanceText.value,
                   color: colorScheme.primary,
                 ),
@@ -416,18 +634,20 @@ class _MapScreenState extends State<MapScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildInfoBox(
-                  context, 
-                  Icons.access_time_filled_rounded, 
-                  "TIME WINDOW", 
+                  context,
+                  Icons.access_time_filled_rounded,
+                  "TIME WINDOW",
                   timeWindow,
-                  color: const Color(0xFF7B1FA2), // Tactical Purple for scheduling
+                  color: const Color(
+                    0xFF7B1FA2,
+                  ), // Tactical Purple for scheduling
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Terminal Actions
           Row(
             children: [
@@ -440,7 +660,9 @@ class _MapScreenState extends State<MapScreen> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     side: BorderSide(color: colorScheme.outlineVariant),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
@@ -451,7 +673,10 @@ class _MapScreenState extends State<MapScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => TaskDetailsScreen(taskId: task.id)),
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            TaskDetailsScreen(taskId: task.id),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.bolt_rounded, size: 20),
@@ -461,7 +686,9 @@ class _MapScreenState extends State<MapScreen> {
                     foregroundColor: colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
@@ -472,7 +699,13 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildInfoBox(BuildContext context, IconData icon, String label, String value, {Color? color}) {
+  Widget _buildInfoBox(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value, {
+    Color? color,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final themeColor = color ?? colorScheme.primary;
 
@@ -481,7 +714,9 @@ class _MapScreenState extends State<MapScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,7 +729,7 @@ class _MapScreenState extends State<MapScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w600,
                   color: colorScheme.onSurfaceVariant,
                   letterSpacing: 1.0,
                 ),
@@ -506,7 +741,7 @@ class _MapScreenState extends State<MapScreen> {
             value,
             style: const TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w600,
               fontFamily: 'monospace',
             ),
           ),
@@ -515,42 +750,51 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildUserLocationMarker(BuildContext context) {
+  Widget _buildPulsingUserMarker(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: 0.2),
-            shape: BoxShape.circle,
-          ),
-        ),
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 4,
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Outward pulse
+            Container(
+              width: 25 + (35 * _pulseAnimation.value),
+              height: 25 + (35 * _pulseAnimation.value),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(
+                  alpha: 0.3 * (1 - _pulseAnimation.value),
+                ),
+                shape: BoxShape.circle,
               ),
-            ],
-          ),
-        ),
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: colorScheme.primary,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ],
+            ),
+            // Inner core
+            Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
