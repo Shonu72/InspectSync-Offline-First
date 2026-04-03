@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/toast_service.dart';
-import '../providers/auth_provider.dart';
+import '../bloc/auth_cubit.dart';
+import '../bloc/auth_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -99,8 +100,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-                        child: Consumer<AuthProvider>(
-                          builder: (context, auth, _) {
+                        child: BlocConsumer<AuthCubit, AuthState>(
+                          listener: (context, state) {
+                            if (state is AuthError) {
+                              ToastService.showError(state.message);
+                            }
+                          },
+                          builder: (context, state) {
+                            final isLoading = state is AuthLoading;
+
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -150,14 +158,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 
-                                if (auth.errorMessage != null) ...[
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    auth.errorMessage!,
-                                    style: TextStyle(color: colorScheme.error, fontSize: 12),
-                                  ),
-                                ],
-                                
                                 const SizedBox(height: 32),
                                 
                                 // Action Button
@@ -165,17 +165,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: double.infinity,
                                   height: 56,
                                   child: ElevatedButton(
-                                    onPressed: auth.isAuthenticating 
+                                    onPressed: isLoading 
                                       ? null 
-                                      : () async {
-                                          final success = await auth.login(
+                                      : () => context.read<AuthCubit>().login(
                                             _emailController.text,
                                             _passwordController.text,
-                                          );
-                                          if (!success) {
-                                            ToastService.showError(auth.errorMessage ?? 'Authentication Failed');
-                                          }
-                                        },
+                                          ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: colorScheme.primary,
                                       foregroundColor: colorScheme.onPrimary,
@@ -184,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       elevation: 0,
                                     ),
-                                    child: auth.isAuthenticating
+                                    child: isLoading
                                       ? const SizedBox(
                                           height: 20,
                                           width: 20,

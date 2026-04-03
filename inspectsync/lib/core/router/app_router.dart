@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 
-import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/auth/presentation/bloc/auth_cubit.dart';
+import '../../features/auth/presentation/bloc/auth_state.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/main_screen.dart';
 import '../../features/sync/presentation/providers/sync_controller.dart';
@@ -21,13 +23,14 @@ class AppRouter {
   static const String createTask = '/create-task';
   static const String conflictResolution = '/sync/conflict/:id';
 
-  static GoRouter createRouter(AuthProvider authProvider, SyncController syncController, AppDatabase db) {
+  static GoRouter createRouter(AuthCubit authCubit, SyncController syncController, AppDatabase db) {
     return GoRouter(
       navigatorKey: navigatorKey,
       initialLocation: login,
-      refreshListenable: authProvider,
+      refreshListenable: GoRouterRefreshStream(authCubit.stream),
       redirect: (context, state) {
-        final isAuthenticated = authProvider.isAuthenticated;
+        final authState = authCubit.state;
+        final isAuthenticated = authState is AuthAuthenticated;
         final isLoggingIn = state.matchedLocation == login;
 
         if (!isAuthenticated && !isLoggingIn) return login;
@@ -65,5 +68,22 @@ class AppRouter {
         ),
       ],
     );
+  }
+}
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+          (dynamic _) => notifyListeners(),
+        );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/db/app_database.dart';
 import 'core/di/injection_container.dart' as di;
@@ -7,9 +7,7 @@ import 'core/di/injection_container.dart';
 import 'core/network/connectivity_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/auth/domain/usecases/login_usecase.dart';
-import 'features/auth/domain/usecases/logout_usecase.dart';
+import 'features/auth/presentation/bloc/auth_cubit.dart';
 import 'features/sync/conflict_resolver.dart';
 import 'features/sync/sync_queue_manager.dart';
 import 'features/sync/sync_service.dart';
@@ -53,16 +51,14 @@ void main() async {
     syncService: syncService,
   );
 
-  final authProvider = AuthProvider(
-    loginUseCase: sl<LoginUseCase>(),
-    logoutUseCase: sl<LogoutUseCase>(),
-  );
+  final authCubit = sl<AuthCubit>();
+  await authCubit.checkStatus();
 
-  final router = AppRouter.createRouter(authProvider, syncController, db);
+  final router = AppRouter.createRouter(authCubit, syncController, db);
 
   runApp(
-    ChangeNotifierProvider.value(
-      value: authProvider,
+    BlocProvider.value(
+      value: authCubit,
       child: MyApp(router: router, taskRepository: taskRepository),
     ),
   );
