@@ -110,14 +110,14 @@ class DashboardScreen extends StatelessWidget {
                   width: double.infinity,
                   color: const Color(0xFFE53935), // Red for no internet
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off, color: Colors.white, size: 14),
-                      SizedBox(width: 8),
+                      const Icon(Icons.wifi_off, color: Colors.white, size: 14),
+                      const SizedBox(width: 8),
                       Text(
-                        'NO INTERNET CONNECTION',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        l10n.noInternet.toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

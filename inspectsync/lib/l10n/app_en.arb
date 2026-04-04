@@ -125,7 +125,7 @@
       }
     }
   },
-  "noInternet": "No internet connection",
+  "noInternet": "Offline Mode — All changes will sync later",
   "offlineDesc": "You're currently offline. Field Precision will continue to cache your data locally until a connection is restored.",
   "retryConnection": "Retry Connection",
   "workOffline": "Work Offline",

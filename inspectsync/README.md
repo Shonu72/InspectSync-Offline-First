@@ -13,23 +13,20 @@ InspectSync is a Flutter-based mobile application designed for field engineers t
 | **Authentication** | ✅ Completed | 100% |
 | **Dashboard** | ✅ Completed | 100% |
 | **Task Management** | ✅ Completed | 100% |
-| **Map View** | ✅ Completed | 85% |
+| **Map View (Clustering)** | ✅ Completed | 100% |
 | **Sync Engine** | ✅ Completed | 100% |
 | **Conflict Resolution** | ✅ Completed | 95% |
-| **Connectivity Monitoring** | ✅ Completed | 100% |
+| **Connectivity Telemetry** | ✅ Completed | 100% |
 | **Create Task Flow** | ✅ Completed | 100% |
 | **Design System (Theming)** | ✅ Completed | 100% |
 | **User Profile & Settings** | ✅ Completed | 100% |
 | **Localization (i18n)** | ✅ Completed | 90% |
-| **Backend API Integration** | ✅ Progressing | 75% |
-| **Admin Dashboard (Desktop)** | 🔲 Not Started | 0% |
-| **Push Notifications** | 🔲 Not Started | 0% |
-| **Analytics & Reporting** | 🔲 Not Started | 0% |
+| **Backend API Integration** | ✅ Progressing | 80% |
 
-**Overall Progress: ~75%**
+**Overall Progress: ~85%**
 
 ```
-████████████████████████░░░░░░  75%
+███████████████████████████░░░  85%
 ```
 ---
 
@@ -41,8 +38,8 @@ The application is structured into several high-performance modules, each handli
 - **📡 Strategic Sync Engine**: The core heartbeat of the app. Features an optimistic offline-first architecture with a reactive SQLite queue, change tracking, and an isolated background routine for data reconciliation.
 - **📋 Task & Directive Management**: Handles the full lifecycle of field assignments—from priority-based creation and protocol definition to real-time execution tracking (Elapsed Time & Progress).
 - **📊 Command Dashboard**: A high-fidelity telemetry interface providing an at-a-glance view of sync health, daily mission velocity, and prioritized operation lists.
-- **🗺️ Geospatial Intelligence (Map)**: Interactive mapping layer using OpenStreetMap to visualize mission sectors and task coordinates in real-time.
-- **⚙️ Operational Settings**: Provides hardware-level controls, including an "Offline Mode" connectivity override and appearance management (Obsidian Command Dark Mode).
+- **🗺️ Geospatial Intelligence (Map)**: Interactive mapping layer featuring **Marker Clustering** for high-density task areas and tactical **Pointer Markers**.
+- **📡 Signal Integrity Telemetry**: Enhanced connectivity monitoring that measures real-time latency (ms) and estimated uplink speed (Mbps) across network types.
 
 ---
 
@@ -150,7 +147,7 @@ InspectSync implements a **dual-mode design system** called the **"Tactical Arch
 - **Field Evidence Section**: Photo grid with capture button (camera integration stub).
 - **Tactical Notes**: Multi-line text input for site observations.
 - **Sticky Footer**: 
-  - **Live Elapsed Time**: Seconds-accurate timer since task creation (implemented via `StreamBuilder` for zero-impact on UI performance).
+  - **Live Session Timer**: Shows **"Time on Site"** tracked since the screen was opened, providing accurate field duration telemetry.
   - **Dynamic Progress**: Real-time completion percentage based on checklist status.
   - **Submit Button**: Finalizes the local report.
 
@@ -164,9 +161,10 @@ InspectSync implements a **dual-mode design system** called the **"Tactical Arch
 - **"Execute Creation"** button with title validation
 
 ### 6. Map Screen
-- Full-screen OpenStreetMap tile layer via `flutter_map`
-- Marker layer with task location pins
-- Interactive zoom and pan controls
+- **Marker Clustering**: Automatically groups nearby tasks to prevent visual overlap.
+- **Pointer Design**: Tactical "Pin + ID Tag" markers for improved coordinate accuracy.
+- **Auto-Fit View**: Centers and zooms the map to fit all active mission tasks on load.
+- **Tactical Controls**: Dedicated Zoom In/Out, "My Location", and "List Mode" quick-access FABs.
 
 ### 7. Engineer Profile Screen
 - **User Telemetry**: Displays real-time name, role, and "Verified" status from `AuthCubit`
@@ -248,7 +246,8 @@ InspectSync implements a **two-layer connectivity verification** system:
 |-------|-----------|-------|----------|------|
 | **Layer 1** | `connectivity_plus` | Instant | Medium | Detects physical radio state (WiFi/Mobile) |
 | **Layer 2** | `InternetAddress.lookup` | ~1-5 sec | High | Verifies actual DNS reachability |
-| **Layer 3** | **Manual Toggle** | Instant | Perfect | User-defined "Offline Mode" for privacy/battery |
+| **Layer 3** | **Signal Integrity** | Real-time | High | Measures **Latency (ms)** and **Mbps** |
+| **Layer 4** | **Manual Toggle** | Instant | Perfect | User-defined "Offline Mode" override |
 
 ### Behavior
 

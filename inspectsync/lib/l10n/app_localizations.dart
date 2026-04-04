@@ -409,7 +409,7 @@ abstract class AppLocalizations {
   /// No description provided for @noInternet.
   ///
   /// In en, this message translates to:
-  /// **'No internet connection'**
+  /// **'Offline Mode — All changes will sync later'**
   String get noInternet;
 
   /// No description provided for @offlineDesc.

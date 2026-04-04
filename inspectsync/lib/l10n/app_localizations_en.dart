@@ -177,7 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noInternet => 'No internet connection';
+  String get noInternet => 'Offline Mode — All changes will sync later';
 
   @override
   String get offlineDesc =>
