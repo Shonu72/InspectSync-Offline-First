@@ -119,7 +119,7 @@ The UI is optimized for field visibility, featuring high-contrast dark modes, la
 
 ---
 
-Designed with ❤️ for Field Engineers by **[Shourya Sonu](https://github.com/shouryasonu)**
+Designed with ❤️ for Field Engineers by **[Shourya Sonu](https://github.com/shonu72)**
 
 ---
 
