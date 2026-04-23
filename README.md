@@ -3,7 +3,7 @@
 [![Full Stack](https://img.shields.io/badge/Stack-Full--Stack-blue.svg)](https://github.com/shouryasonu/inspectSync)
 [![Flutter](https://img.shields.io/badge/Frontend-Flutter-blue.svg)](./inspectsync)
 [![Node.js](https://img.shields.io/badge/Backend-Node.js-green.svg)](./inspect-backend)
-[![License: UNLICENSED](https://img.shields.io/badge/License-UNLICENSED-red.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **InspectSync** is a robust, enterprise-grade field inspection platform designed for high-stakes environments where data integrity and offline reliability are non-negotiable. It solves the critical "Field Data Gap" by enabling seamless operations in zero-connectivity zones through an advanced, version-controlled synchronization engine.
 
@@ -124,4 +124,4 @@ Designed with ❤️ for Field Engineers by **[Shourya Sonu](https://github.com/
 ---
 
 ## 📜 License
-This project is for demonstration purposes and is currently UNLICENSED.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
