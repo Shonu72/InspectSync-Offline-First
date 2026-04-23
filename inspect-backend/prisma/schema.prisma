@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ENGINEER
+  ADMIN
+}
+
+enum Priority {
+  HIGH
+  MED
+  LOW
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+  CONFLICT
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          Role      @default(ENGINEER)
+  tasksCreated  Task[]    @relation("TaskCreator")
+  tasksAssigned Task[]    @relation("TaskAssignee")
+  syncLogs      SyncLog[]
+  devices       Device[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Device {
+  id           String    @id @default(uuid())
+  deviceId     String    @unique
+  userId       String
+  user         User      @relation(fields: [userId], references: [id])
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  lat             Float?
+  lng             Float?
+  status          String    @default("pending") // pending, completed
+  priority        Priority  @default(MED)
+  category        String? // Field Maintenance, Infrastructure Audit, etc.
+  version         Int       @default(1)
+  scheduledAt     DateTime?
+  clientUpdatedAt DateTime?
+  deletedAt       DateTime?
+  images          String?
+
+  createdById String
+  createdBy   User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToId, status])
+  @@index([updatedAt])
+}
+
+model SyncLog {
+  id             String     @id @default(uuid())
+  deviceId       String
+  userId         String
+  user           User       @relation(fields: [userId], references: [id])
+  entityType     String
+  entityId       String
+  operation      String // create, update, delete
+  payload        Json
+  idempotencyKey String     @unique
+  status         SyncStatus @default(PENDING)
+  errorMessage   String?
+  createdAt      DateTime   @default(now())
+}
+
+model Conflict {
+  id         String   @id @default(uuid())
+  entityId   String
+  entityType String
+  localData  Json
+  serverData Json
+  resolved   Boolean  @default(false)
+  resolvedBy String?
+  createdAt  DateTime @default(now())
+}
+
