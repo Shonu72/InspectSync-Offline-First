@@ -33,19 +33,9 @@ graph TD
     end
 ```
 
-## 🌟 Resume Highlights
-
-If you're showcasing this project in your portfolio or resume, here are the key technical accomplishments to highlight:
-
-- **Offline-First Synchronization Engine**: Designed a robust Two-Phase (Push-Pull) sync protocol with field-level conflict resolution (LWW) and automated retry logic.
-- **Enterprise-Grade Security**: Implemented a private-by-default media strategy using AWS S3 Request Presigning (24h expiry) for secure, offline-accessible evidence management.
-- **High-Performance Architecture**: Leveraged Prisma ORM (Type-Safe DB) and Redis-backed idempotency layers to ensure exactly-once processing of field reports.
-- **Tactical UI/UX Design**: Engineered the "Obsidian Command" design system, optimized for high-glare field environments using high-contrast typography and tone-based layering.
-- **Full-Stack Test Coverage**: Maintained technical rigor with automated unit testing suites in both Flutter (`mocktail`) and Node.js (`jest`), achieving high coverage on core synchronization services.
-
 ---
 
-## 🌟 Key Pillars
+## Features
 
 ### 1. Optimistic Offline Engine
 Engineers can perform full inspections without an internet connection. All changes are logged to an internal **Sync Queue** (Idempotent) and automatically synchronized when connectivity is restored.
